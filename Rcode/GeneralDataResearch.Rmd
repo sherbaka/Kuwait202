@@ -1,0 +1,1061 @@
+---
+title: "GeneralDataResearch"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+##All the packages essential to running my code, there might even be some that I never use, but most of them are needed and they are here:
+library(plyr)
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(openair)
+library(ggplot2)
+library(qpcR)
+library(zoo)
+library(readr)
+```
+
+```{r}
+#first thing I did was import PM data from Kuwait after editing it in Excel 
+
+KuwaitPM2020 <- read_csv("Data/KuwaitCity_PM2.5_2020_YTD.csv")
+KuwaitPM2017 <- read_csv("Data/KuwaitCity_PM2.5_2017_YTD.csv")
+KuwaitPM2018 <- read_csv("Data/KuwaitCity_PM2.5_2018_YTD.csv")
+KuwaitPM2019 <- read_csv("Data/KuwaitCity_PM2.5_2019_YTD.csv")
+## you can also view these by going :
+## View(datsetname) but I dont want to see them right now.
+## Now you should have 4 datasets in your global environment.
+
+## we need to make some of the columns into numerics before mutating
+KuwaitPM2020$Year <- as.numeric(KuwaitPM2020$Year)
+KuwaitPM2020$Month <- as.numeric(KuwaitPM2020$Month)
+KuwaitPM2020$Day <- as.numeric(KuwaitPM2020$Day)
+KuwaitPM2020$Hour <- as.numeric(KuwaitPM2020$Hour)
+
+KuwaitPM2019$Year <- as.numeric(KuwaitPM2019$Year)
+KuwaitPM2019$Month <- as.numeric(KuwaitPM2019$Month)
+KuwaitPM2019$Day <- as.numeric(KuwaitPM2019$Day)
+KuwaitPM2019$Hour <- as.numeric(KuwaitPM2019$Hour)
+
+KuwaitPM2018$Year <- as.numeric(KuwaitPM2018$Year)
+KuwaitPM2018$Month <- as.numeric(KuwaitPM2018$Month)
+KuwaitPM2018$Day <- as.numeric(KuwaitPM2018$Day)
+KuwaitPM2018$Hour <- as.numeric(KuwaitPM2018$Hour)
+
+KuwaitPM2017$Year <- as.numeric(KuwaitPM2017$Year)
+KuwaitPM2017$Month <- as.numeric(KuwaitPM2017$Month)
+KuwaitPM2017$Day <- as.numeric(KuwaitPM2017$Day)
+KuwaitPM2017$Hour <- as.numeric(KuwaitPM2017$Hour)
+
+##Now we are going to mutate the data sets becasue we dont need all the columns of data 
+## We can either create a new edited dataset or adjust the old one, I am going to adjust the old one so that we have less data to play around with. 
+KuwaitPM2020 <- KuwaitPM2020  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+## We are also making some timestamps for the datasets, it does come with one, but we can also create our own through the data they give us. I will do it the other way as well in the future
+KuwaitPM2019 <- KuwaitPM2019  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+KuwaitPM2018 <- KuwaitPM2018  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+KuwaitPM2017 <- KuwaitPM2017  %>%
+dplyr::select(Year, Month, Day, Hour, AQI, `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+#sometimes the select function does not work on my computer so I put dplyr:: before it, but you dont have to do that if the dplyr package works
+
+
+
+##Once we have the correct data in each dataset, I am going to change a few of the names so that they are easier to deal with. 
+## Here is an easy way to change the name of columns
+names(KuwaitPM2019)[names(KuwaitPM2019)=="Raw Conc."] <- "RawConc"
+names(KuwaitPM2020)[names(KuwaitPM2020)=="Raw Conc."] <- "RawConc"
+names(KuwaitPM2017)[names(KuwaitPM2017)=="Raw Conc."] <- "RawConc"
+names(KuwaitPM2018)[names(KuwaitPM2018)=="Raw Conc."] <- "RawConc"
+
+
+##lets merge the datasets now and see what we can get
+KuwaitPM20172018=full_join(KuwaitPM2017,KuwaitPM2018,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+KuwaitPM20192020=full_join(KuwaitPM2019,KuwaitPM2020,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+KuwaitPMFull=full_join(KuwaitPM20172018,KuwaitPM20192020,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+##I think there might be an easier way to do this but I am not sure and this works pretty well for me.
+
+##Now lets make the months have names and an order to them that isnt alphabetical:
+
+KuwaitPMFull <- KuwaitPMFull %>%
+    filter(
+    RawConc >= 0
+  )%>%
+  filter(
+    AQI >= 0
+  )%>%
+ mutate(
+    YearName = case_when(
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"
+      
+    )
+  ) %>%
+  # making new variable with month names
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December"
+    )
+)%>%
+    mutate(Month_Name = factor(Month_Name))
+KuwaitPMFull$Month_Name <- fct_reorder(KuwaitPMFull$Month_Name, 
+                                          KuwaitPMFull$Month, 
+                                          min
+                                     )
+KuwaitPMFull$YearName <- as.factor(KuwaitPMFull$YearName)
+```
+
+```{r} 
+##here is our fist boxplot:
+
+ggplot(data = KuwaitPMFull, 
+       mapping = aes(x = Year,
+                     y = RawConc,
+                      fill = Month_Name)) +
+  geom_boxplot()+
+  labs(
+    title = "The Title",
+    subtitle = "The smaller title if you want one",
+    caption = "always site ur sources, can do that here",
+    x = "Month",
+    y = "PM 2.5"
+  ) +
+    theme_bw()
+##This gives us a very straightforward boxplot, there are no filters so there are a ton of outliers.
+##This method can be applied to any PM data set with multiple years of data. Now lets take a look at some timeseries.
+
+ggplot(data = KuwaitPMFull, 
+       mapping = aes(x = date,
+                     y = RawConc,
+                      fill = YearName)) +
+  geom_line()+ 
+  theme_bw()
+##Some more plots that may be useful that I will play around with in further code.
+ggplot(data = KuwaitPMFull, 
+       mapping = aes(x = Month_Name,
+                     y = RawConc,
+                      fill = YearName)) +
+  geom_boxplot()+
+   
+    theme_bw()
+
+```
+
+
+```{r}
+##lets add some weather data into the mix
+##here is a weather data file that we can import
+KuwaitWeather <- read_csv("Data/2017-2020KuwaitWeather.csv")
+#if we want to adjust the weather or add anything to it we can do that here
+
+#making the date in a POSIXct format
+KuwaitWeather$date <- as.POSIXct(KuwaitWeather$date, format = '%m/%d/%Y %H:%M') 
+
+#separating the date and time so that I can merge with pm data better
+KuwaitWeather<- KuwaitWeather %>%
+  
+separate(date, sep=" ", into = c("date", "Hour"))
+
+KuwaitWeather$date<- as.POSIXct(KuwaitWeather$date, format ='%Y-%m-%d')
+
+#separating the date into year month and day
+KuwaitWeather<- KuwaitWeather %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+##Now we have year month day and hour but they are in chr formats so lets make it into a num
+KuwaitWeather$Year <- as.numeric(KuwaitWeather$Year)
+KuwaitWeather$Month <- as.numeric(KuwaitWeather$Month)
+KuwaitWeather$Day <- as.numeric(KuwaitWeather$Day)
+##adjusting the years and hours so that they also work better
+KuwaitWeather<- KuwaitWeather %>%
+
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017') )
+KuwaitWeather$Year <- as.numeric(KuwaitWeather$Year)
+KuwaitWeather<- KuwaitWeather %>%
+  mutate(
+   Hour = case_when(
+      Hour == "00:00:00" ~ '0',
+      Hour == "01:00:00" ~ '1',
+      Hour == "02:00:00" ~ '2',
+      Hour == "03:00:00" ~ '3',
+      Hour == "04:00:00" ~ '4',
+      Hour == "05:00:00" ~ '5',
+      Hour == "06:00:00" ~ '6',
+      Hour == "07:00:00" ~ '7',
+      Hour == "08:00:00" ~ '8',
+      Hour == "09:00:00" ~ '9',
+      Hour == "10:00:00" ~ '10',
+      Hour == "11:00:00" ~ '11',
+      Hour == "12:00:00" ~ '12',
+      Hour == "13:00:00" ~ '13',
+      Hour == "14:00:00" ~ '14',
+      Hour == "15:00:00" ~ '15',
+      Hour == "16:00:00" ~ '16',
+      Hour == "17:00:00" ~ '17',
+      Hour == "18:00:00" ~ '18',
+      Hour == "19:00:00" ~ '19',
+      Hour == "20:00:00" ~ '20',
+      Hour == "21:00:00" ~ '21',
+      Hour == "22:00:00" ~ '22',
+      Hour == "23:00:00" ~ '23'
+     
+      ))
+
+KuwaitWeather$Hour <- as.numeric(KuwaitWeather$Hour)
+##Last but not least lets make a new timestamp, these methods can be applied in other data sets as well.
+KuwaitWeather<- KuwaitWeather %>%
+dplyr::select(Year, Month, Day, Hour, visibility, wd, ws, rh, tempc) %>%
+   mutate( date = make_datetime(Year, Month, Day, Hour )  )
+##Making the M's into Na then converting them into num from chr
+is.na(KuwaitWeather$tempc) <- startsWith(KuwaitWeather$tempc, "M")
+is.na(KuwaitWeather$rh) <- startsWith(KuwaitWeather$rh, "M")
+
+KuwaitWeather$rh <- as.numeric(as.character(KuwaitWeather$rh))
+KuwaitWeather$tempc <- as.numeric(as.character(KuwaitWeather$tempc))
+##Now lets do the same thing with month_names and yearnames as with PM
+KuwaitWeather <- KuwaitWeather %>% #this means 'and then'
+  # making new variable with month names
+  mutate(
+    YearName = case_when(
+     ##Year =='2016' ~ "2016" ##for Manama dataset
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"
+      
+    )
+  ) %>%
+  # making new variable with month names
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December"
+    )
+  ) %>%
+ 
+  mutate(Month_Name = factor(Month_Name))
+  
+KuwaitWeather$Month_Name <- fct_reorder(KuwaitWeather$Month_Name, 
+                                          KuwaitWeather$Month, 
+                                          min)
+KuwaitWeather$YearName <- as.factor(KuwaitWeather$YearName)
+
+
+##Now lets merge the two datasets, (PM and Weather)
+KuwaitFullJoin=full_join(KuwaitWeather,KuwaitPMFull,by=c("date", "Hour", "Year", "Month", "Day", "Month_Name", "YearName"))
+
+```
+
+```{r}
+##Here are some facetted graphs that may be useful to take a look at for month to month comparison, We need to make a new timestamp for them but I never figured out how to get rid of the months, youll see what I mean:
+KuwaitFullJoinFacet<- KuwaitFullJoin%>%
+mutate(dayhour = make_datetime(2020,1,Day, Hour))
+
+#now lets make the plot
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                     fill = Month_Name)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+
+##This is for every year, If we want to chose a specific year you can use the function 
+## filter(Year == 2020) for example or if you want to just exclude 2020 you can do != 2020.
+##here is an example of that
+KuwaitFullJoinFacet<- KuwaitFullJoin%>%
+mutate(dayhour = make_datetime(2020,1,Day, Hour))%>%
+  filter(Year == 2020)
+
+#now lets make the plot
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                     fill = Month_Name)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##see how the months on the x axis are wrong, not sure how to get rid of that but this is the general code for that.  That filter function can be used for any variable, PM threshold, visibility threshold etc. 
+```
+
+```{r}
+##Using the OpenAir Package
+
+polarPlot(KuwaitFullJoin, pollutant = "RawConc", type =  "month")
+##This will give us 12 polar plots by month for PM all 4 years averaged data. The format of this line of code is pretty straightforward. Here is the link to the package page though: http://davidcarslaw.github.io/openair/ YOu can also do it by year or day or season. This plot takes longer to work so make sure it is right before you run it. The more the years of code the longer
+##For a windrose, it is almost the the same input but for a different function
+windRose(KuwaitFullJoin,type= "month" )
+##Lets do another openair plot that may be useful:
+##This is for diurnal plots, also useful to use the filter funtion here to organize by year or month etc:
+timeVariation(KuwaitFullJoin, pollutant = "RawConc")
+##This plot, the trendLevel function, provides a way of rapidly showing a large amount of data in a condensed form by year and hour:
+trendLevel(KuwaitFullJoin, pollutant = "RawConc")
+##This plot primarily plots wind speed-direction frequencies in ‘bins’. Each bin is color-coded depending on the frequency of measurements. Bins can also be used to show the concentration of pollutants using a range of commonly used statistics.
+polarFreq(KuwaitFullJoin, pollutant = "RawConc", type = "year", min.bin = 2)
+##This function will plot data by month laid out in a conventional calendar format. The main purpose is to help rapidly visualise potentially complex data in a familiar way. Users can also choose to show daily mean wind vectors if wind speed and direction are available.
+calendarPlot(KuwaitFullJoin, pollutant = "RawConc", year = 2020)
+```
+
+
+```{r}
+##Ok now I am going to repeat the first two parts of this process with Manama data so that we can also have that:
+ManamaPM2020 <- read_csv("Data/Manama_PM2.5_2020_YTD.csv")
+ManamaPM2017 <- read_csv("Data/Manama_PM2.5_2017_YTD.csv")
+ManamaPM2018 <- read_csv("Data/Manama_PM2.5_2018_YTD.csv")
+ManamaPM2019 <- read_csv("Data/Manama_PM2.5_2019_YTD.csv")
+ManamaPM2016 <- read_csv("Data/Manama_PM2.5_2016_YTD.csv")
+
+ManamaPM2020$Year <- as.numeric(ManamaPM2020$Year)
+ManamaPM2020$Month <- as.numeric(ManamaPM2020$Month)
+ManamaPM2020$Day <- as.numeric(ManamaPM2020$Day)
+ManamaPM2020$Hour <- as.numeric(ManamaPM2020$Hour)
+
+ManamaPM2019$Year <- as.numeric(ManamaPM2019$Year)
+ManamaPM2019$Month <- as.numeric(ManamaPM2019$Month)
+ManamaPM2019$Day <- as.numeric(ManamaPM2019$Day)
+ManamaPM2019$Hour <- as.numeric(ManamaPM2019$Hour)
+
+ManamaPM2018$Year <- as.numeric(ManamaPM2018$Year)
+ManamaPM2018$Month <- as.numeric(ManamaPM2018$Month)
+ManamaPM2018$Day <- as.numeric(ManamaPM2018$Day)
+ManamaPM2018$Hour <- as.numeric(ManamaPM2018$Hour)
+
+ManamaPM2017$Year <- as.numeric(ManamaPM2017$Year)
+ManamaPM2017$Month <- as.numeric(ManamaPM2017$Month)
+ManamaPM2017$Day <- as.numeric(ManamaPM2017$Day)
+ManamaPM2017$Hour <- as.numeric(ManamaPM2017$Hour)
+
+ManamaPM2016$Year <- as.numeric(ManamaPM2016$Year)
+ManamaPM2016$Month <- as.numeric(ManamaPM2016$Month)
+ManamaPM2016$Day <- as.numeric(ManamaPM2016$Day)
+ManamaPM2016$Hour <- as.numeric(ManamaPM2016$Hour)
+
+ManamaPM2020 <- ManamaPM2020  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+ManamaPM2019 <- ManamaPM2019  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+ManamaPM2018 <- ManamaPM2018  %>%
+dplyr::select(Year, Month, Day, Hour, AQI,  `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+ManamaPM2017 <- ManamaPM2017  %>%
+dplyr::select(Year, Month, Day, Hour, AQI, `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+ManamaPM2016 <- ManamaPM2016  %>%
+dplyr::select(Year, Month, Day, Hour, AQI, `Raw Conc.`) %>%
+      mutate( date = make_datetime(Year, Month, Day, Hour )  )
+
+names(ManamaPM2016)[names(ManamaPM2016)=="Raw Conc."] <- "RawConc"
+names(ManamaPM2017)[names(ManamaPM2017)=="Raw Conc."] <- "RawConc"
+names(ManamaPM2018)[names(ManamaPM2018)=="Raw Conc."] <- "RawConc"
+names(ManamaPM2019)[names(ManamaPM2019)=="Raw Conc."] <- "RawConc"
+names(ManamaPM2020)[names(ManamaPM2020)=="Raw Conc."] <- "RawConc"
+
+Manama20162017=full_join(ManamaPM2016,ManamaPM2017,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+Manama20182019=full_join(ManamaPM2018,ManamaPM2019,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+Manama20162019=full_join(Manama20182019,Manama20162017,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+ManamaPMFull=full_join(Manama20162019,ManamaPM2020,by=c("Year", "Month", "Day", "Hour", "AQI", "RawConc", "date"))
+
+ManamaPMFull <- ManamaPMFull %>%
+    filter(
+    RawConc >= 0 )%>%
+  filter(
+    AQI >= 0
+  )%>%
+ mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December"))%>%
+    mutate(Month_Name = factor(Month_Name))
+ManamaPMFull$Month_Name <- fct_reorder(ManamaPMFull$Month_Name,  ManamaPMFull$Month,min )
+ManamaPMFull$YearName <- as.factor(ManamaPMFull$YearName)
+
+##Now lets do the meterology:
+ManamaWeather <- read_csv("Data/ManamaWeather20162020.csv")
+
+names(ManamaWeather)[names(ManamaWeather)=="valid"] <- "date"
+ManamaWeather$date <- as.POSIXct(ManamaWeather$date, format = '%m/%d/%Y %H:%M') 
+ManamaWeather<- ManamaWeather %>%
+separate(date, sep=" ", into = c("date", "Hour"))
+ManamaWeather$date<- as.POSIXct(ManamaWeather$date, format ='%Y-%m-%d')
+ManamaWeather<- ManamaWeather %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+ManamaWeather$Year <- as.numeric(ManamaWeather$Year)
+ManamaWeather$Month <- as.numeric(ManamaWeather$Month)
+ManamaWeather$Day <- as.numeric(ManamaWeather$Day)
+ManamaWeather<- ManamaWeather %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017',
+      Year == '16' ~ '2016') )
+ManamaWeather$Year <- as.numeric(ManamaWeather$Year)
+ManamaWeather<- ManamaWeather %>%
+  mutate(
+   Hour = case_when(
+      Hour == "00:00:00" ~ '0',
+      Hour == "01:00:00" ~ '1',
+      Hour == "02:00:00" ~ '2',
+      Hour == "03:00:00" ~ '3',
+      Hour == "04:00:00" ~ '4',
+      Hour == "05:00:00" ~ '5',
+      Hour == "06:00:00" ~ '6',
+      Hour == "07:00:00" ~ '7',
+      Hour == "08:00:00" ~ '8',
+      Hour == "09:00:00" ~ '9',
+      Hour == "10:00:00" ~ '10',
+      Hour == "11:00:00" ~ '11',
+      Hour == "12:00:00" ~ '12',
+      Hour == "13:00:00" ~ '13',
+      Hour == "14:00:00" ~ '14',
+      Hour == "15:00:00" ~ '15',
+      Hour == "16:00:00" ~ '16',
+      Hour == "17:00:00" ~ '17',
+      Hour == "18:00:00" ~ '18',
+      Hour == "19:00:00" ~ '19',
+      Hour == "20:00:00" ~ '20',
+      Hour == "21:00:00" ~ '21',
+      Hour == "22:00:00" ~ '22',
+      Hour == "23:00:00" ~ '23'
+     
+      ))
+ManamaWeather$Hour <- as.numeric(ManamaWeather$Hour)
+
+ManamaWeather<- ManamaWeather %>%
+dplyr::select(Year, Month, Day, Hour, visibility, wd, ws, rh, tempc) %>%
+   mutate( date = make_datetime(Year, Month, Day, Hour )  )
+is.na(ManamaWeather$wd) <- startsWith(ManamaWeather$wd, "M")
+ManamaWeather$wd <- as.numeric(ManamaWeather$wd)
+ManamaWeather$rh <- as.numeric(as.character(ManamaWeather$rh))
+ManamaWeather$tempc <- as.numeric(as.character(ManamaWeather$tempc))
+ManamaWeather <- ManamaWeather %>%
+  mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" )) %>%
+  mutate(Month_Name = factor(Month_Name))
+ManamaWeather$Month_Name <- fct_reorder(ManamaWeather$Month_Name, ManamaWeather$Month,  min)
+ManamaWeather$YearName <- as.factor(ManamaWeather$YearName)
+
+ManamaFullJoin=full_join(ManamaWeather,ManamaPMFull,by=c("date", "Hour", "Year", "Month", "Day", "Month_Name", "YearName"))
+
+```
+
+```{r}
+##Now we are going to make some daily averages and plots with baselines and 2020
+##Lets start with the baseline plots
+
+##Lets start with Kuwait:
+##First we are going to separate 2020 from the other years witht the filter function, we will create 2 new datasets with that
+
+Kuwait2020full<- KuwaitFullJoin%>%
+filter(Year==2020)
+##now for the other years
+Kuwait20172019full<- KuwaitFullJoin%>%
+filter(Year!=2020)%>%
+  mutate(date = make_datetime(2019,Month,Day, Hour))
+##We only really need to wrangle the 2017-2019 data since there are too many datapoints there but it is pretty straighforward
+##Now we get rid of the years on the dataset so that we can avg them together
+
+##lets make it the correct format just in case also
+Kuwait20172019full$date <- as.POSIXct(Kuwait20172019full$date, format = '2019-%m-%d')
+##Now we aggregate the three years so that we have an average
+
+Kuwait20172019full <- aggregate(cbind(ws,RawConc, visibility, wd, rh, tempc, AQI, Month, Day, Hour ) ~ (date), data=Kuwait20172019full, FUN=mean)
+##Now lets do until july since thats the amount of data we have for 2020 anyways
+  Kuwait20172019full$Year <- 2019
+##  even though it isnt 2019 we need some basis for the baseline dates
+Kuwait20172019full <- Kuwait20172019full %>%
+  filter (date <= as.Date("2019-07-02"))%>% ##change if updated dates
+##Lets add Month_Name and YearName back in.
+  mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+Kuwait20172019full$YearName <- as.factor(Kuwait20172019full$YearName)
+
+KuwaitBaseline=full_join(Kuwait20172019full,Kuwait2020full,by=c("ws","RawConc", "visibility", "wd", "rh", "tempc", "AQI", "Month", "Day", "Hour", "date", "Year", "YearName", "Month_Name"))
+
+##Ok so now we have a baseline and a current year code. This can be applied to any place with the same variables. IF the dates need to be updated, then you need to change the date filter, there is a note. 
+
+##Now lets add some daily averages into there
+##We can use an openair function to get averages. 
+AVGKuwaitBaseline <- timeAverage(KuwaitBaseline, avg.time = "day")
+##We have to add Month_Name and YearName back in again, oy vey
+AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitBaseline$YearName <- as.factor(AVGKuwaitBaseline$YearName)
+
+##You can make the average time other spans, like months or weeks etc. 
+##We can also create another column of 15 day or however long rolling averages using this function:
+AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
+    dplyr::mutate(PM15avg = zoo::rollmean(RawConc, k = 15, fill = NA)) %>% 
+  dplyr::ungroup()
+##K is the amoung of days, this will be useful if you want to see a smoother plot.
+
+```
+
+```{r}
+##How to find a correlation between two variables in the same datasets:
+##This only needs to be run once
+ggplotRegression <- function (fit) {
+ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) +
+  geom_point() +
+  xlab("PM") +
+  ylab("Visibility") +
+  geom_abline(intercept = 0, slope = 1, col = "blue") +
+  stat_smooth(method = "lm", col = "red") +
+  labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                     "Intercept =",signif(fit$coef[[1]],5 ),
+                     " Slope =",signif(fit$coef[[2]], 5),
+                     " P =",signif(summary(fit)$coef[2,4], 5)))}
+##This is the plot, make sure to change the labels on the x and y axis above
+ggplotRegression(lm(visibility~RawConc, data =AVGKuwaitBaseline))
+
+##Another useful plot type is with two different y axis:
+coeff <- 20 ##this needs to be adjusted based on the scale 
+ggplot(KuwaitFullJoin, aes(x=date)) +
+    geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  geom_line( aes(y=visibility),  color="black") + 
+  scale_y_continuous(
+    # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="PM Concentration") ) + 
+  theme_bw()
+##This plot looks very janky but thats becasue of the filters that are not there
+
+
+```
+
+```{r}
+##Creating a baseline for Manama
+
+Manama2020full<- ManamaFullJoin%>%
+filter(Year==2020)
+Manama20162019full<- ManamaFullJoin%>%
+filter(Year!=2020)%>%
+  mutate(date = make_datetime(2019,Month,Day, Hour))
+Manama20162019full$date <- as.POSIXct(Manama20162019full$date, format = '2019-%m-%d')
+
+Manama20162019full <- aggregate(cbind(ws,RawConc, visibility, wd, rh, tempc, AQI, Month, Day, Hour ) ~ (date), data=Manama20162019full, FUN=mean)
+  Manama20162019full$Year <- 2019
+Manama20162019full <- Manama20162019full %>%
+  filter (date <= as.Date("2019-07-02"))%>%
+  mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+
+ManamaBaseline=full_join(Manama20162019full,Manama2020full,by=c("ws","RawConc", "visibility", "wd", "rh", "tempc", "AQI", "Month", "Day", "Hour", "date", "Year", "YearName", "Month_Name"))
+
+AVGManamaBaseline <- timeAverage(ManamaBaseline, avg.time = "day")
+AVGManamaBaseline<- AVGManamaBaseline%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGManamaBaseline$YearName <- as.factor(AVGManamaBaseline$YearName)
+
+AVGManamaBaseline<- AVGManamaBaseline%>%
+    dplyr::mutate(PM15avg = zoo::rollmean(RawConc, k = 15, fill = NA)) %>% 
+  dplyr::ungroup()
+
+
+```
+
+```{r}
+##Facetted stacked plot, here we go:
+##Creating a new variable for levels of AQI
+KuwaitAQIPlot<- KuwaitBaseline 
+  KuwaitAQIPlot[,"AQIexplain"] <- NA 
+  KuwaitAQIPlot<- KuwaitBaseline %>%
+ dplyr:: mutate( AQIexplain = case_when(
+          KuwaitAQIPlot$AQI <= 50 ~ "Good",
+          KuwaitAQIPlot$AQI <=100 ~ "Moderate",
+          KuwaitAQIPlot$AQI <=150 ~ "Unhealthy for Sensitive Groups",
+          KuwaitAQIPlot$AQI <=200 ~ "Unhealthy",
+          KuwaitAQIPlot$AQI <=300 ~ "Very Unhealthy",
+          KuwaitAQIPlot$AQI > 301 ~ "Hazardous"))
+KuwaitAQIPlot$AQIexplain <- as.factor(KuwaitAQIPlot$AQIexplain)
+
+##Now making them a factor with order
+
+KuwaitAQIPlot$AQIexplain <- factor(KuwaitAQIPlot$AQIexplain, levels = c("Good", "Moderate", "Unhealthy for Sensitive Groups", "Unhealthy", "Very Unhealthy", "Hazardous"))
+
+##Making the months a factor with some order to them
+KuwaitAQIPlot <- KuwaitAQIPlot %>% 
+  mutate(Month_Name = factor(Month_Name))
+KuwaitAQIPlot$Month_Name <- fct_reorder(KuwaitAQIPlot$Month_Name, 
+                                          KuwaitAQIPlot$Month, 
+                                          min)
+##Here is the plot that we want for the facetted stacked plot for AQI
+ggplot() +
+  geom_bar(data=KuwaitAQIPlot, aes(y = AQI, x = YearName, fill = AQIexplain), stat="identity",
+           position='fill') +
+  theme_bw() + 
+  facet_grid( ~ Month_Name)+
+  xlab(" ")+
+ ylab ("Percent of Days Per Month")+
+   scale_fill_manual(values = c("limegreen","gold", "Orange", "Red", "Purple", "darkmagenta", name = " AQI"))
+##Not sure why I chose those specific colors, they just stand out more: Here is a link for ggplot colors http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf 
+##It is super useful if you want some things to stand out more or less, like for this faceted plot
+##It may also be interesting to see how PM looks in a faceted plot like this compared to AQI since they are pretty different and you can see differences. 
+##I am not sure how to change the years at the bottom...
+##That may be an ask for people who are better versed at R
+
+```
+
+```{r}
+##Same AQI plot for Manama now
+
+ManamaAQIPlot<- ManamaBaseline 
+  ManamaAQIPlot[,"AQIexplain"] <- NA 
+  ManamaAQIPlot<- ManamaAQIPlot %>%
+  mutate(AQIexplain = case_when(
+          ManamaAQIPlot$AQI <= 50 ~ "Good",
+          ManamaAQIPlot$AQI <=100 ~ "Moderate",
+          ManamaAQIPlot$AQI <=150 ~ "Unhealthy for Sensitive Groups",
+          ManamaAQIPlot$AQI <=200 ~ "Unhealthy",
+          ManamaAQIPlot$AQI <=300 ~ "Very Unhealthy",
+          ManamaAQIPlot$AQI > 301 ~ "Hazardous"))
+ManamaAQIPlot$AQIexplain <- as.factor(ManamaAQIPlot$AQIexplain)
+
+ManamaAQIPlot$AQIexplain <- factor(ManamaAQIPlot$AQIexplain, levels = c("Good", "Moderate", "Unhealthy for Sensitive Groups", "Unhealthy", "Very Unhealthy", "Hazardous"))
+
+ManamaAQIPlot <- ManamaAQIPlot %>% 
+  mutate(Month_Name = factor(Month_Name))
+ManamaAQIPlot$Month_Name <- fct_reorder(ManamaAQIPlot$Month_Name, 
+                                          ManamaAQIPlot$Month, 
+                                          min)
+ggplot() +
+  geom_bar(data=ManamaAQIPlot, aes(y = AQI, x = YearName, fill = AQIexplain), stat="identity",
+           position='fill') +
+  theme_bw() + 
+  facet_grid( ~ Month_Name)+
+  xlab(" ")+
+ ylab ("Percent of Days Per Month")+
+   scale_fill_manual(values = c("limegreen","gold", "Orange", "Red", "Purple", "darkmagenta", name = " AQI"))
+```
+
+```{r}
+##Merging datasets together and using other pollutant data
+##We are going to merge Kuwait and Manama data sets, these two: ManamaFullJoin and KuwaitFullJoin
+#In order to do this we can add a new column to each of the datasets called location so that when they merge the data does not get confused. Here is how we can do that 
+
+ManamaFullJoin$location <- "Manama"
+KuwaitFullJoin$location <- "Kuwait"
+##now we have a new column in both datasets that day the locations, lets merge them by all the columns now
+ManamaKuwaitJoin=full_join(ManamaFullJoin,KuwaitFullJoin,by=c("ws","RawConc", "visibility", "wd", "rh", "tempc", "AQI", "Month", "Day", "Hour", "date", "Year", "YearName", "Month_Name", "location"))
+##great! now we can make some plots and our data is pretty!
+
+##A simple line plot with the two cities PM data, this can be applicable to any type of dataset similar, again these have no filters
+ggplot() +
+  geom_line(data=ManamaKuwaitJoin, aes(y = RawConc, x = date, group = location, color=location)
+           ) +
+ xlab("Date ")+
+ ylab ("PM")
+
+##Now lets import another dataset and edit it so that we can merge it as well. Lets do NO2 data from giovanni:
+ManamaNO2 <- read_csv("Data/NO2Bahrain.csv")
+##lets adjust the dates now and make it more meragble, similar to what we did with the weather data:
+ManamaNO2$date <- as.POSIXct(ManamaNO2$date, format = '%m/%d/%Y') 
+ManamaNO2<- ManamaNO2 %>%
+separate(date, sep=" ", into = c("date"))
+ManamaNO2$date<- as.POSIXct(ManamaNO2$date, format ='%Y-%m-%d')
+ManamaNO2<- ManamaNO2 %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+ManamaNO2$Year <- as.numeric(ManamaNO2$Year)
+ManamaNO2$Month <- as.numeric(ManamaNO2$Month)
+ManamaNO2$Day <- as.numeric(ManamaNO2$Day)
+ManamaNO2<- ManamaNO2 %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017',
+      Year == '16' ~ '2016') )
+ManamaNO2$Year <- as.numeric(ManamaNO2$Year)
+
+ManamaNO2<- ManamaNO2 %>%
+dplyr::select(Year, Month, Day, NO2) %>%
+   mutate( date = make_datetime(Year, Month, Day)  )
+ManamaNO2 <- ManamaNO2 %>%
+  mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" )) %>%
+  mutate(Month_Name = factor(Month_Name))
+ManamaNO2$Month_Name <- fct_reorder(ManamaNO2$Month_Name, ManamaNO2$Month,  min)
+ManamaNO2$YearName <- as.factor(ManamaNO2$YearName)
+
+##Lets merge it with the daily Manama data sets now:
+AVGManamaBaseline=full_join(AVGManamaBaseline,ManamaNO2,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+
+##So thats it, the rest of the code is just plots, and filters with more data merges that have been done in this document. There will stil be explanations with them though.
+
+
+```
+
+
+```{r}
+##Lets add more NO2 data to Kuwait and Manama, same process as before
+KuwaitNO2Spen <- read_csv("Data/KuwaitSpencerNo2.csv")
+KuwaitNO2 <- read_csv("Data/KuwaitNO2.csv")
+KuwaitNO2Trop <- read_csv("Data/KuwaitNO2Trop.csv")
+
+KuwaitNO2Spen$date <- as.POSIXct(KuwaitNO2Spen$date, format = '%m/%d/%Y') 
+KuwaitNO2Spen<- KuwaitNO2Spen %>%
+separate(date, sep=" ", into = c("date"))
+KuwaitNO2Spen$date<- as.POSIXct(KuwaitNO2Spen$date, format ='%Y-%m-%d')
+KuwaitNO2Spen<- KuwaitNO2Spen %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+KuwaitNO2Spen$Year <- as.numeric(KuwaitNO2Spen$Year)
+KuwaitNO2Spen$Month <- as.numeric(KuwaitNO2Spen$Month)
+KuwaitNO2Spen$Day <- as.numeric(KuwaitNO2Spen$Day)
+KuwaitNO2Spen<- KuwaitNO2Spen %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017',
+      Year == '16' ~ '2016') )
+KuwaitNO2Spen$Year <- as.numeric(KuwaitNO2Spen$Year)
+
+KuwaitNO2Spen<- KuwaitNO2Spen %>%
+dplyr::select(Year, Month, Day, NO2S) %>%
+   mutate( date = make_datetime(Year, Month, Day)  )
+KuwaitNO2Spen <- KuwaitNO2Spen %>%
+  mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" )) %>%
+  mutate(Month_Name = factor(Month_Name))
+KuwaitNO2Spen$Month_Name <- fct_reorder(KuwaitNO2Spen$Month_Name, KuwaitNO2Spen$Month,  min)
+KuwaitNO2Spen$YearName <- as.factor(KuwaitNO2Spen$YearName)
+
+###Now for the next one
+KuwaitNO2$date <- as.POSIXct(KuwaitNO2$date, format = '%m/%d/%Y') 
+KuwaitNO2<- KuwaitNO2 %>%
+separate(date, sep=" ", into = c("date"))
+KuwaitNO2$date<- as.POSIXct(KuwaitNO2$date, format ='%Y-%m-%d')
+KuwaitNO2<- KuwaitNO2 %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+KuwaitNO2$Year <- as.numeric(KuwaitNO2$Year)
+KuwaitNO2$Month <- as.numeric(KuwaitNO2$Month)
+KuwaitNO2$Day <- as.numeric(KuwaitNO2$Day)
+KuwaitNO2<- KuwaitNO2 %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017',
+      Year == '16' ~ '2016') )
+KuwaitNO2$Year <- as.numeric(KuwaitNO2$Year)
+
+KuwaitNO2<- KuwaitNO2 %>%
+dplyr::select(Year, Month, Day, NO2) %>%
+   mutate( date = make_datetime(Year, Month, Day)  )
+KuwaitNO2 <- KuwaitNO2 %>%
+  mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" )) %>%
+    filter (NO2> 0)%>%
+ filter (NO2< 3e18)%>%
+     dplyr::mutate(NO215 = zoo::rollmean(NO2, k = 15, fill = NA)) %>% 
+  dplyr::ungroup()%>%
+  mutate(Month_Name = factor(Month_Name))
+KuwaitNO2$Month_Name <- fct_reorder(KuwaitNO2$Month_Name, KuwaitNO2$Month,  min)
+KuwaitNO2$YearName <- as.factor(KuwaitNO2$YearName)
+
+
+##And for the troposphere
+KuwaitNO2Trop$date <- as.POSIXct(KuwaitNO2Trop$date, format = '%m/%d/%Y') 
+KuwaitNO2Trop<- KuwaitNO2Trop %>%
+separate(date, sep=" ", into = c("date"))
+KuwaitNO2Trop$date<- as.POSIXct(KuwaitNO2Trop$date, format ='%Y-%m-%d')
+KuwaitNO2Trop<- KuwaitNO2Trop %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+KuwaitNO2Trop$Year <- as.numeric(KuwaitNO2Trop$Year)
+KuwaitNO2Trop$Month <- as.numeric(KuwaitNO2Trop$Month)
+KuwaitNO2Trop$Day <- as.numeric(KuwaitNO2Trop$Day)
+KuwaitNO2Trop<- KuwaitNO2Trop %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019', 
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017',
+      Year == '16' ~ '2016') )
+KuwaitNO2Trop$Year <- as.numeric(KuwaitNO2Trop$Year)
+
+KuwaitNO2Trop<- KuwaitNO2Trop %>%
+dplyr::select(Year, Month, Day, NO2T) %>%
+   mutate( date = make_datetime(Year, Month, Day)  )
+KuwaitNO2Trop <- KuwaitNO2Trop %>%
+  mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020")) %>%
+  mutate(
+    Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" )) %>%
+    filter (NO2T> 0)%>%
+ filter (NO2T< 3e+18)%>%
+   dplyr::mutate(NO2T15 = zoo::rollmean(NO2T, k = 15, fill = NA)) %>% 
+  dplyr::ungroup()%>%
+  
+  mutate(Month_Name = factor(Month_Name))
+KuwaitNO2Trop$Month_Name <- fct_reorder(KuwaitNO2Trop$Month_Name, KuwaitNO2Trop$Month,  min)
+KuwaitNO2Trop$YearName <- as.factor(KuwaitNO2Trop$YearName)
+
+KuwaitNO2fullt=full_join(KuwaitNO2Trop, KuwaitNO2,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+KuwaitNO2full=full_join(KuwaitNO2tfull, KuwaitNO2Spen, by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+
+AVGKuwaitBaseline=full_join(AVGKuwaitBaseline,KuwaitNO2Trop,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+AVGKuwaitBaseline=full_join(AVGKuwaitBaseline,KuwaitNO2,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+AVGKuwaitBaseline=full_join(AVGKuwaitBaseline,KuwaitNO2Spen,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+```
+
+
+```{r}
+
+##Now lets plot these guys AVGKuwaitBaseline
+coeff <- 1e15
+ggplot(KuwaitNO2fullt, aes(x=date)) +
+    geom_line( aes(y=NO2T15/ coeff),  color="blue") +
+  geom_line( aes(y=NO215/ coeff),  color="red") +
+  scale_y_continuous(
+   sec.axis = sec_axis(~.*coeff, name="NO2")
+  ) + 
+  theme_bw() 
+
+ggplot() + 
+  geom_line(data = KuwaitNO2fullt, aes(x = date, y = NO215), color = "blue") +
+    geom_line(data = KuwaitNO2fullt, aes(x = date, y = NO2T15), color = "red") +
+labs(x = "Date",
+         y = "NO2") +
+  theme_bw()
+ggplot() + 
+  geom_line(data = KuwaitNO2full, aes(x = date, y = NO2S), color = "blue") +
+labs(x = "Date",
+         y = " Spencer NO2") +
+  theme_bw()
+
+```
