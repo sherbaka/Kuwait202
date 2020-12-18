@@ -1,0 +1,112 @@
+---
+title: "WeatherKuwait"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+#Libraries to import
+library(plyr)
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(openair)
+library(readr)
+```
+
+
+```{r}
+KuwaitWeather <- read_csv("Data/KuwaitWeather.csv")
+
+```
+
+```{r}
+KuwaitWeather$time <- as.POSIXct(KuwaitWeather$time, format = '%m/%d/%Y %H:%M') 
+names(KuwaitWeather)[names(KuwaitWeather)=="time"] <- "date"
+```
+
+
+```{r}
+KuwaitWeather<- KuwaitWeather %>%
+separate(date, sep=" ", into = c("date", "Time"))
+KuwaitWeather$date<- as.POSIXct(KuwaitWeather$date, format ='%Y-%m-%d')
+
+
+
+
+KuwaitWeather<- KuwaitWeather %>%
+separate(date, sep="-", into = c("Year", "Month", "Day"))
+
+KuwaitWeather$Year <- as.numeric(as.character(KuwaitWeather$Year))
+KuwaitWeather$Month <- as.numeric(as.character(KuwaitWeather$Month))
+KuwaitWeather$Day <- as.numeric(as.character(KuwaitWeather$Day))
+str(KuwaitWeather)
+
+
+
+```
+
+```{r}
+
+KuwaitWeather<- KuwaitWeather %>%
+mutate(
+    Year = case_when(
+      Year == '20' ~ '2020',
+      Year == '19' ~ '2019',
+      Year == '18' ~ '2018',
+      Year == '17' ~ '2017') )
+KuwaitWeather$Year <- as.numeric(as.character(KuwaitWeather$Year))
+str(KuwaitWeather)
+
+KuwaitWeather<- KuwaitWeather %>%
+  mutate(
+    Time = case_when(
+      Time == "00:00:00" ~ '0',
+      Time == "01:00:00" ~ '1',
+      Time == "02:00:00" ~ '2',
+      Time == "03:00:00" ~ '3',
+      Time == "04:00:00" ~ '4',
+      Time == "05:00:00" ~ '5',
+      Time == "06:00:00" ~ '6',
+      Time == "07:00:00" ~ '7',
+      Time == "08:00:00" ~ '8',
+      Time == "09:00:00" ~ '9',
+      Time == "10:00:00" ~ '10',
+      Time == "11:00:00" ~ '11',
+      Time == "12:00:00" ~ '12',
+      Time == "13:00:00" ~ '13',
+      Time == "14:00:00" ~ '14',
+      Time == "15:00:00" ~ '15',
+      Time == "16:00:00" ~ '16',
+      Time == "17:00:00" ~ '17',
+      Time == "18:00:00" ~ '18',
+      Time == "19:00:00" ~ '19',
+      Time == "20:00:00" ~ '20',
+      Time == "21:00:00" ~ '21',
+      Time == "22:00:00" ~ '22',
+      Time == "23:00:00" ~ '23'
+     
+      ))
+str(KuwaitWeather)
+
+KuwaitWeather$Time <- as.numeric(as.character(KuwaitWeather$Time))
+str(KuwaitWeather)
+
+```
+
+```{r}
+names(KuwaitWeather)[names(KuwaitWeather)=="Time"] <- "Hour"
+KuwaitWeather<- KuwaitWeather %>%
+select(Year, Month, Day, Hour, temp, relh, wd, ws, visibility, station)  %>%
+        mutate(date = make_datetime(Year, Month, Day, Hour))
+
+```
+
+
+
+
+
+

@@ -15,7 +15,6 @@ library(forcats)
 library(lubridate)
 library(openair)
 library(ggplot2)
-library(qpcR)
 library(zoo)
 library(readr)
 ```
