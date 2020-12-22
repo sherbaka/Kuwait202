@@ -127,6 +127,12 @@ KuwaitPMFull$Month_Name <- fct_reorder(KuwaitPMFull$Month_Name,
 KuwaitPMFull$YearName <- as.factor(KuwaitPMFull$YearName)
 ```
 
+```{r}
+rm(KuwaitPM2017, KuwaitPM20172018, KuwaitPM2018, KuwaitPM2019, KuwaitPM20192020, KuwaitPM2020)
+write.csv(KuwaitPMFull, file= "KuwaitPMFull.csv")
+
+```
+
 ```{r} 
 ##here is our fist boxplot:
 
@@ -172,6 +178,7 @@ KuwaitWeather <- read_csv("Data/KuwaitWeather.csv")
 #if we want to adjust the weather or add anything to it we can do that here
 
 #making the date in a POSIXct format
+names(KuwaitWeather)[names(KuwaitWeather)=="date"] <- "time"
 KuwaitWeather$time <- as.POSIXct(KuwaitWeather$time, format = '%m/%d/%Y %H:%M') 
 names(KuwaitWeather)[names(KuwaitWeather)=="time"] <- "date"
 #separating the date and time so that I can merge with pm data better
@@ -235,7 +242,9 @@ KuwaitWeather<- KuwaitWeather %>%
 select(Year, Month, Day, Hour, temp, relh, wd, ws, visibility, station)  %>%
         mutate(date = make_datetime(Year, Month, Day, Hour))
 ##Making the M's into Na then converting them into num from chr
-is.na(KuwaitWeather$tempc) <- startsWith(KuwaitWeather$temp, "M")
+KuwaitWeather$relh <- as.character(as.numeric(KuwaitWeather$relh))
+
+is.na(KuwaitWeather$temp) <- startsWith(KuwaitWeather$temp, "M")
 is.na(KuwaitWeather$relh) <- startsWith(KuwaitWeather$relh, "M")
 
 KuwaitWeather$relh <- as.numeric(as.character(KuwaitWeather$relh))
@@ -282,6 +291,11 @@ KuwaitWeather$YearName <- as.factor(KuwaitWeather$YearName)
 ##Now lets merge the two datasets, (PM and Weather)
 KuwaitFullJoin=full_join(KuwaitWeather,KuwaitPMFull,by=c("date", "Hour", "Year", "Month", "Day", "Month_Name", "YearName"))
 
+```
+
+```{r}
+write.csv(KuwaitFullJoin, file= "KuwaitPMFull.csv")
+write.csv(KuwaitWeather, file= "KuwaitWeather.csv")
 ```
 
 ```{r}

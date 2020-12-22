@@ -7,22 +7,109 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+##All the packages essential to running my code, there might even be some that I never use, but most of them are needed and they are here:
+library(plyr)
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(openair)
+library(ggplot2)
+library(zoo)
+library(readr)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+##May not use all these datasets, but lets import them either way. 
+setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
+KuwaitFullJoin <- read_csv("Data/KuwaitFullJoin.csv")
+KuwaitWeather <- read_csv("Data/KuwaitWeather.csv")
+KuwaitPMFull <- read_csv("Data/KuwaitPMFull.csv")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+
+###Lets mutate it becaseu i dont know how else to make a nive loooking facetted plot.
+KuwaitFullJoinFacet<- KuwaitFullJoin%>%
+mutate(dayhour = make_datetime(2020,1,Day, Hour))
+
+
+##Here is our first plot
+#now lets make the plot
+
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                     fill = Year)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##We cannot tell which year is which so lets try something else
+##Changing the fill to month_name, adding color=year
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                     fill = Month_Name, 
+                     color=Year)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##This gave us a plot with miltiple years in each mmonth, useful. can we try that with the old dataset?
+ggplot(data = KuwaitFullJoin, 
+       mapping = aes(x = date,
+                     y = RawConc,
+                     fill = Month_Name, 
+                     color=Year)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##The dates are all messed up, hm lets go back i guess. I am not sure how to fix that.
+##i took out fill
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                      
+                     color=Year)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+
+##Taking out fill doesnt seem to change anything, lets just add some better colors and make the bottom better. 
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc,
+                      
+                     color=Year)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+scale_x_discrete(breaks=c("1","2","3","4","5","6","7","8","9","10","11","12"),
+labels=c("1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5"= "May", "6" = "Jun", "7"= "Jul", "8"="Aug", "9" = "Sep", "10"= "Oct", "11"= "Nov", "12"= "Dec"))
+My_Theme = theme(
+  axis.title.y = element_text(size = 8))
+p+My_Theme
+
+ggplot(data = Aerosol,
+       mapping = aes(x = date,
+                     y = Mean, 
+                     color = YearName)) +  geom_line() +
+
+scale_x_date(date_breaks = "1 month",
+               date_labels = "%b-%y")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
