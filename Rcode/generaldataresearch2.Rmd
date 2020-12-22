@@ -1,5 +1,5 @@
 ---
-title: "GeneralDataResearch"
+title: "GeneralDataResearch2"
 output: pdf_document
 ---
 
@@ -17,11 +17,14 @@ library(openair)
 library(ggplot2)
 library(zoo)
 library(readr)
+library(scales)
+library(ggthemes)
+library(gridExtra)
 ```
 
-```{r warning=FALSE}
+```{r}
 #first thing I did was import PM data from Kuwait after editing it in Excel 
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
+
 KuwaitPM2020 <- read_csv("Data/KuwaitCity_PM2.5_2020_YTD.csv")
 KuwaitPM2017 <- read_csv("Data/KuwaitCity_PM2.5_2017_YTD.csv")
 KuwaitPM2018 <- read_csv("Data/KuwaitCity_PM2.5_2018_YTD.csv")
@@ -127,12 +130,6 @@ KuwaitPMFull$Month_Name <- fct_reorder(KuwaitPMFull$Month_Name,
 KuwaitPMFull$YearName <- as.factor(KuwaitPMFull$YearName)
 ```
 
-```{r}
-rm(KuwaitPM2017, KuwaitPM20172018, KuwaitPM2018, KuwaitPM2019, KuwaitPM20192020, KuwaitPM2020)
-write.csv(KuwaitPMFull, file= "KuwaitPMFull.csv")
-
-```
-
 ```{r} 
 ##here is our fist boxplot:
 
@@ -173,14 +170,12 @@ ggplot(data = KuwaitPMFull,
 ```{r}
 ##lets add some weather data into the mix
 ##here is a weather data file that we can import
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
-KuwaitWeather <- read_csv("Data/KuwaitWeather.csv")
+KuwaitWeather <- read_csv("Data/2017-2020KuwaitWeather.csv")
 #if we want to adjust the weather or add anything to it we can do that here
 
 #making the date in a POSIXct format
-names(KuwaitWeather)[names(KuwaitWeather)=="date"] <- "time"
-KuwaitWeather$time <- as.POSIXct(KuwaitWeather$time, format = '%m/%d/%Y %H:%M') 
-names(KuwaitWeather)[names(KuwaitWeather)=="time"] <- "date"
+KuwaitWeather$date <- as.POSIXct(KuwaitWeather$date, format = '%m/%d/%Y %H:%M') 
+
 #separating the date and time so that I can merge with pm data better
 KuwaitWeather<- KuwaitWeather %>%
   
@@ -237,18 +232,15 @@ KuwaitWeather<- KuwaitWeather %>%
 
 KuwaitWeather$Hour <- as.numeric(KuwaitWeather$Hour)
 ##Last but not least lets make a new timestamp, these methods can be applied in other data sets as well.
-names(KuwaitWeather)[names(KuwaitWeather)=="Time"] <- "Hour"
 KuwaitWeather<- KuwaitWeather %>%
-select(Year, Month, Day, Hour, temp, relh, wd, ws, visibility, station)  %>%
-        mutate(date = make_datetime(Year, Month, Day, Hour))
+dplyr::select(Year, Month, Day, Hour, visibility, wd, ws, rh, tempc) %>%
+   mutate( date = make_datetime(Year, Month, Day, Hour )  )
 ##Making the M's into Na then converting them into num from chr
-KuwaitWeather$relh <- as.character(as.numeric(KuwaitWeather$relh))
+is.na(KuwaitWeather$tempc) <- startsWith(KuwaitWeather$tempc, "M")
+is.na(KuwaitWeather$rh) <- startsWith(KuwaitWeather$rh, "M")
 
-is.na(KuwaitWeather$temp) <- startsWith(KuwaitWeather$temp, "M")
-is.na(KuwaitWeather$relh) <- startsWith(KuwaitWeather$relh, "M")
-
-KuwaitWeather$relh <- as.numeric(as.character(KuwaitWeather$relh))
-KuwaitWeather$tempc <- as.numeric(as.character(KuwaitWeather$temp))
+KuwaitWeather$rh <- as.numeric(as.character(KuwaitWeather$rh))
+KuwaitWeather$tempc <- as.numeric(as.character(KuwaitWeather$tempc))
 ##Now lets do the same thing with month_names and yearnames as with PM
 KuwaitWeather <- KuwaitWeather %>% #this means 'and then'
   # making new variable with month names
@@ -291,11 +283,6 @@ KuwaitWeather$YearName <- as.factor(KuwaitWeather$YearName)
 ##Now lets merge the two datasets, (PM and Weather)
 KuwaitFullJoin=full_join(KuwaitWeather,KuwaitPMFull,by=c("date", "Hour", "Year", "Month", "Day", "Month_Name", "YearName"))
 
-```
-
-```{r}
-write.csv(KuwaitFullJoin, file= "KuwaitPMFull.csv")
-write.csv(KuwaitWeather, file= "KuwaitWeather.csv")
 ```
 
 ```{r}
@@ -349,7 +336,6 @@ calendarPlot(KuwaitFullJoin, pollutant = "RawConc", year = 2020)
 
 ```{r}
 ##Ok now I am going to repeat the first two parts of this process with Manama data so that we can also have that:
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
 ManamaPM2020 <- read_csv("Data/Manama_PM2.5_2020_YTD.csv")
 ManamaPM2017 <- read_csv("Data/Manama_PM2.5_2017_YTD.csv")
 ManamaPM2018 <- read_csv("Data/Manama_PM2.5_2018_YTD.csv")
@@ -440,7 +426,6 @@ ManamaPMFull$Month_Name <- fct_reorder(ManamaPMFull$Month_Name,  ManamaPMFull$Mo
 ManamaPMFull$YearName <- as.factor(ManamaPMFull$YearName)
 
 ##Now lets do the meterology:
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
 ManamaWeather <- read_csv("Data/ManamaWeather20162020.csv")
 
 names(ManamaWeather)[names(ManamaWeather)=="valid"] <- "date"
@@ -821,7 +806,6 @@ ggplot() +
  ylab ("PM")
 
 ##Now lets import another dataset and edit it so that we can merge it as well. Lets do NO2 data from giovanni:
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
 ManamaNO2 <- read_csv("Data/NO2Bahrain.csv")
 ##lets adjust the dates now and make it more meragble, similar to what we did with the weather data:
 ManamaNO2$date <- as.POSIXct(ManamaNO2$date, format = '%m/%d/%Y') 
@@ -883,7 +867,6 @@ AVGManamaBaseline=full_join(AVGManamaBaseline,ManamaNO2,by=c("date","Year", "Mon
 
 ```{r}
 ##Lets add more NO2 data to Kuwait and Manama, same process as before
-setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
 KuwaitNO2Spen <- read_csv("Data/KuwaitSpencerNo2.csv")
 KuwaitNO2 <- read_csv("Data/KuwaitNO2.csv")
 KuwaitNO2Trop <- read_csv("Data/KuwaitNO2Trop.csv")
@@ -1044,7 +1027,7 @@ KuwaitNO2Trop <- KuwaitNO2Trop %>%
 KuwaitNO2Trop$Month_Name <- fct_reorder(KuwaitNO2Trop$Month_Name, KuwaitNO2Trop$Month,  min)
 KuwaitNO2Trop$YearName <- as.factor(KuwaitNO2Trop$YearName)
 
-KuwaitNO2tfull=full_join(KuwaitNO2Trop, KuwaitNO2,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
+KuwaitNO2fullt=full_join(KuwaitNO2Trop, KuwaitNO2,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
 KuwaitNO2full=full_join(KuwaitNO2tfull, KuwaitNO2Spen, by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
 
 AVGKuwaitBaseline=full_join(AVGKuwaitBaseline,KuwaitNO2Trop,by=c("date","Year", "Month", "Day", "YearName", "Month_Name" ))
