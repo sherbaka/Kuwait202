@@ -17,6 +17,9 @@ library(openair)
 library(ggplot2)
 library(zoo)
 library(readr)
+library(scales)
+library(ggthemes)
+library(gridExtra)
 ```
 
 
@@ -78,24 +81,63 @@ ggplot(data = KuwaitFullJoinFacet,
 ggplot(data = KuwaitFullJoinFacet, 
        mapping = aes(x = dayhour,
                      y = RawConc,
-                      
                      color=Year)) +  geom_line() + facet_wrap(~Month_Name)+
-  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
-scale_x_discrete(breaks=c("1","2","3","4","5","6","7","8","9","10","11","12"),
-labels=c("1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5"= "May", "6" = "Jun", "7"= "Jul", "8"="Aug", "9" = "Sep", "10"= "Oct", "11"= "Nov", "12"= "Dec"))
-My_Theme = theme(
-  axis.title.y = element_text(size = 8))
-p+My_Theme
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
+##So I cannot change the colors, but lets just look at 2020
 
-ggplot(data = Aerosol,
-       mapping = aes(x = date,
-                     y = Mean, 
-                     color = YearName)) +  geom_line() +
+KuwaitFullJoinFacet2020<- KuwaitFullJoin%>%
 
-scale_x_date(date_breaks = "1 month",
-               date_labels = "%b-%y")
+  filter(Year== 2020)
+ggplot(data = KuwaitFullJoinFacet, 
+       mapping = aes(x = dayhour,
+                     y = RawConc)) +  geom_line() + facet_wrap(~Month_Name)+
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
+
 ```
 
+
+
+```{r}
+###Taking the daily means
+AVGKuwaitBaseline <- timeAverage(KuwaitFullJoin, avg.time = "day")
+AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+  
+ 
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitBaseline$YearName <- as.factor(AVGKuwaitBaseline$YearName)
+ AVGKuwaitBaseline$Month_Name <- fct_reorder(AVGKuwaitBaseline$Month_Name, 
+                                          AVGKuwaitBaseline$Month, 
+                                          min)
+##Now comes our boxplot
+ggplot(data = AVGKuwaitBaseline, 
+       mapping = aes(x = Month_Name,
+                     y = RawConc,
+                      fill = YearName)) +  geom_boxplot()+
+  labs(title = "TRaw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
+
+
+```
 
 
 
