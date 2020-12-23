@@ -140,7 +140,104 @@ ggplot(data = AVGKuwaitBaseline,
 ```
 
 
+```{r}
+##Now lets take avgs from 2017-2019 and then compare it with the 2020 data. 
+##here is the chunk for 2020, less needs to be done here.
+KuwaitFullJoin2020 <-KuwaitFullJoin%>%
+filter (Year == 2020)
+KuwaitFullJoin2020$temp <- as.numeric(KuwaitFullJoin2020$temp)
+KuwaitFullJoin2020$YearName <- as.factor(KuwaitFullJoin2020$YearName)
+##Here is the first chunk
+KuwaitFullJoin20172019 <-KuwaitFullJoin%>%
+filter (Year != 2020)%>%
+  mutate(date = make_datetime(2019,Month,Day, Hour))
+KuwaitFullJoin20172019$date <- as.POSIXct(KuwaitFullJoin20172019$date, format = '2019-%m-%d')
+KuwaitFullJoin20172019$temp <- as.numeric(KuwaitFullJoin20172019$temp)
+KuwaitFullJoin20172019 <- aggregate(cbind(ws,RawConc, visibility, wd, relh,temp, AQI, Month, Day, Hour ) ~ (date), data=KuwaitFullJoin20172019, FUN=mean)
 
+
+  KuwaitFullJoin20172019$Year <- 2019
+  
+KuwaitFullJoin20172019 <- KuwaitFullJoin20172019 %>%
+  filter (date <= as.Date("2019-12-15"))%>% ##change if updated dates
+##Lets add Month_Name and YearName back in.
+  mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+KuwaitFullJoin20172019$YearName <- as.factor(KuwaitFullJoin20172019$YearName)
+
+KuwaitBaseline=full_join(KuwaitFullJoin20172019,KuwaitFullJoin2020,by=c("ws","RawConc", "visibility", "wd", "relh", "temp", "AQI", "Month", "Day", "Hour", "date", "Year", "YearName", "Month_Name"))
+  
+
+
+
+AVGKuwaitBaseline <- timeAverage(KuwaitBaseline, avg.time = "day")
+##We have to add Month_Name and YearName back in again, oy vey
+AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitBaseline$YearName <- as.factor(AVGKuwaitBaseline$YearName)
+
+```
+
+
+
+```{r}
+##And now for some plots!
+
+ggplot(data = KuwaitBaseline, 
+       mapping = aes(x = date,
+                     y = RawConc,
+                     fill = Month_Name, 
+                     color=Year)) +  geom_line() +
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+
+
+
+
+
+
+```
 
 
 
