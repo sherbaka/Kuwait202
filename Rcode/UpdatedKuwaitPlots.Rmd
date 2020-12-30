@@ -36,7 +36,7 @@ KuwaitPMFull <- read_csv("Data/KuwaitPMFull.csv")
 
 ```{r}
 
-###Lets mutate it becaseu i dont know how else to make a nive loooking facetted plot.
+###Lets mutate it becaseu i dont know how else to make a nice looking faceted plot.
 KuwaitFullJoinFacet<- KuwaitFullJoin%>%
 mutate(dayhour = make_datetime(2020,1,Day, Hour))
 
@@ -91,7 +91,7 @@ KuwaitFullJoinFacet2020<- KuwaitFullJoin%>%
 ggplot(data = KuwaitFullJoinFacet, 
        mapping = aes(x = dayhour,
                      y = RawConc)) +  geom_line() + facet_wrap(~Month_Name)+
-  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
+  labs(title = "Raw Concentration and Time in 2020", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
 
 ```
 
@@ -103,18 +103,18 @@ AVGKuwaitBaseline <- timeAverage(KuwaitFullJoin, avg.time = "day")
 AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
  mutate(
    Month_Name = case_when(
-      Month == '1' ~ "January",
-      Month == '2' ~ "February",
-      Month == '3' ~ "March",
-      Month == '4' ~ "April",
+      Month == '1' ~ "Jan",
+      Month == '2' ~ "Feb",
+      Month == '3' ~ "Mar",
+      Month == '4' ~ "Apr",
       Month == '5' ~ "May",
-      Month == '6' ~ "June",
-      Month == '7' ~ "July",
-      Month == '8' ~ "August",
-      Month == '9' ~ "September",
-      Month == '10' ~ "October",
-      Month == '11' ~ "November",
-      Month == '12' ~ "December" ) )%>%
+      Month == '6' ~ "Jun",
+      Month == '7' ~ "Jul",
+      Month == '8' ~ "Aug",
+      Month == '9' ~ "Sep",
+      Month == '10' ~ "Oct",
+      Month == '11' ~ "Nov",
+      Month == '12' ~ "Dec" ) )%>%
   mutate(Month_Name = factor(Month_Name))%>%
   
  
@@ -134,7 +134,7 @@ ggplot(data = AVGKuwaitBaseline,
        mapping = aes(x = Month_Name,
                      y = RawConc,
                       fill = YearName)) +  geom_boxplot()+
-  labs(title = "TRaw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" )+ theme_bw()
+  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)", fill = "Year")+ theme_bw()
 
 
 ```
@@ -150,16 +150,15 @@ KuwaitFullJoin2020$YearName <- as.factor(KuwaitFullJoin2020$YearName)
 ##Here is the first chunk
 KuwaitFullJoin20172019 <-KuwaitFullJoin%>%
 filter (Year != 2020)%>%
-  mutate(date = make_datetime(2019,Month,Day, Hour))
+  mutate(date = make_datetime(2020,Month,Day, Hour))
 KuwaitFullJoin20172019$date <- as.POSIXct(KuwaitFullJoin20172019$date, format = '2019-%m-%d')
 KuwaitFullJoin20172019$temp <- as.numeric(KuwaitFullJoin20172019$temp)
 KuwaitFullJoin20172019 <- aggregate(cbind(ws,RawConc, visibility, wd, relh,temp, AQI, Month, Day, Hour ) ~ (date), data=KuwaitFullJoin20172019, FUN=mean)
 
-
-  KuwaitFullJoin20172019$Year <- 2019
+KuwaitFullJoin20172019$Year <- 2019
   
 KuwaitFullJoin20172019 <- KuwaitFullJoin20172019 %>%
-  filter (date <= as.Date("2019-12-15"))%>% ##change if updated dates
+  filter (date <= as.Date("2020-12-15"))%>% ##change if updated dates
 ##Lets add Month_Name and YearName back in.
   mutate(
    Month_Name = case_when(
@@ -217,38 +216,533 @@ AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
       Year == '2020'~ "2020"))
 AVGKuwaitBaseline$YearName <- as.factor(AVGKuwaitBaseline$YearName)
 
+
+AVGKuwaitFullJoin20172019 <- timeAverage(KuwaitFullJoin20172019, avg.time = "day")
+KuwaitFullJoin20172019<- KuwaitFullJoin20172019%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+  
+ 
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+KuwaitFullJoin20172019$YearName <- as.factor(KuwaitFullJoin20172019$YearName)
+ KuwaitFullJoin20172019$Month_Name <- fct_reorder(KuwaitFullJoin20172019$Month_Name, 
+                                          KuwaitFullJoin20172019$Month, 
+                                          min)
+ AVGKuwaitFullJoin2020 <- timeAverage(KuwaitFullJoin2020, avg.time = "day")
+KuwaitFullJoin2020<- KuwaitFullJoin2020%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+  
+ 
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+KuwaitFullJoin2020$YearName <- as.factor(KuwaitFullJoin2020$YearName)
+ KuwaitFullJoin2020$Month_Name <- fct_reorder(KuwaitFullJoin2020$Month_Name, 
+                                          KuwaitFullJoin2020$Month, 
+                                          min)
 ```
 
 
 
 ```{r}
 ##And now for some plots!
+ggplot() + 
+  geom_line(data = KuwaitFullJoin2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = KuwaitFullJoin20172019, aes(x = date, y = RawConc), color = "red") +
+  
+   labs(title = "Raw Concentration and Time 2017-2019 vs 2020", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##I am not sure how to get rid of the year on the axis, but this should work for now
 
-ggplot(data = KuwaitBaseline, 
-       mapping = aes(x = date,
-                     y = RawConc,
-                     fill = Month_Name, 
-                     color=Year)) +  geom_line() +
-  labs(title = "Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+##Now lets do some avgs
+ggplot() + 
+  geom_line(data = AVGKuwaitFullJoin2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFullJoin20172019, aes(x = date, y = RawConc), color = "red") +
+  
+   labs(title = "Avg Raw Concentration and Time", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##Still some biig peaks
+
+##Lets do RH and RawConc in 2020
+ggplot() + 
+  geom_line(data = AVGKuwaitFullJoin2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFullJoin2020, aes(x = date, y = relh), color = "Black") +
+  
+   labs(title = "Avg Raw Concentration and Relative Humidity for 2020", x = "Months", y = "Value" ) +
+  theme_bw()
+##lets do visibility
+ggplot() + 
+  geom_line(data = AVGKuwaitFullJoin2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFullJoin2020, aes(x = date, y = visibility), color = "Black") +
+  
+   labs(title = "Avg Raw Concentration and Visibility for 2020", x = "Months", y = "Value" ) +
+  theme_bw()
+##Lets try another plot, can barely see the visibility line
+coeff <- 10
+ggplot(AVGKuwaitFullJoin2020, aes(x=date)) +  geom_line( aes(y=visibility),  color="black") + 
+  geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  scale_y_continuous(
+     # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="Raw Concentration (UG/M3)")
+  ) + theme_bw()+
+labs(title = "Avg Raw Concentration and Visibility for 2020")
+
+
+
+```
+
+```{r}
+##Now lets look at years past
+
+ggplot() + 
+  geom_line(data = AVGKuwaitFullJoin20172019, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFullJoin20172019, aes(x = date, y = relh), color = "black") +
+  
+   labs(title = "Avg Raw Concentration and Relative Humidity 2017-2019 avgs", x = "Months", y = "Value" ) +
   theme_bw()
 
+coeff <- 10
+ggplot(AVGKuwaitFullJoin20172019, aes(x=date)) +  geom_line( aes(y=visibility),  color="black") + 
+  geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  scale_y_continuous(
+     # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="Raw Concentration (UG/M3)")
+  ) + theme_bw()+
+labs(title = "Avg Raw Concentration and Visibility for 2017-2019")
+
+```
 
 
+```{r ##playing around w openair}
+##playing around w openair
+timeVariation(KuwaitFullJoin20172019, pollutant = "RawConc", main = " PM (UG/M3)from 2017-2019 ", cols = "jet")
+timeVariation(KuwaitFullJoin2020, pollutant = "RawConc", main = "PM Concentrations (UG/M3) in 2020", cols = "jet")
+
+a <- polarPlot(KuwaitFullJoin20172019, pollutant = "RawConc", main = " PM (UG/M3)from 2017-2019 ",  cols = "jet")
+b <- polarPlot(KuwaitFullJoin2020,  pollutant = "RawConc", main = "PM Concentrations (UG/M3) in 2020 ",  cols = "jet")
+print(a, split = c(1, 1, 2, 1))
+print(b, split = c(2, 1, 2, 1), newpage = FALSE)
+c <- timeVariation(KuwaitFullJoin2020, pollutant = "RawConc",  cols = "jet")
+print(b, split = c(1, 1, 2, 1))
+print(c, split = c(2, 1, 2, 1), subset = "month", newpage = FALSE)
+```
+
+
+```{r}
+##Now lets remove the dust storms
+KuwaitFilter200 <- KuwaitFullJoin%>%
+  filter (RawConc <= 200)
+
+##Now lets take the avges of that
+AVGKuwaitFilter200 <- timeAverage(KuwaitFilter200, avg.time = "day")
+##We have to add Month_Name and YearName back in again, oy vey
+AVGKuwaitFilter200<- AVGKuwaitFilter200%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitFilter200$YearName <- as.factor(AVGKuwaitFilter200$YearName)
+
+##Now lets separate the years and and take those avgs to makes some plots
+
+KuwaitFilter2020 <-KuwaitFilter200%>%
+filter (Year == 2020)
+KuwaitFilter2020$temp <- as.numeric(KuwaitFilter2020$temp)
+KuwaitFilter2020$YearName <- as.factor(KuwaitFilter2020$YearName)
+##Here is the first chunk
+KuwaitFilter2019 <-KuwaitFilter200%>%
+filter (Year != 2020)%>%
+  mutate(date = make_datetime(2020,Month,Day, Hour))
+KuwaitFilter2019$date <- as.POSIXct(KuwaitFilter2019$date, format = '2019-%m-%d')
+KuwaitFilter2019$temp <- as.numeric(KuwaitFilter2019$temp)
+KuwaitFilter2019 <- aggregate(cbind(ws,RawConc, visibility, wd, relh,temp, AQI, Month, Day, Hour ) ~ (date), data=KuwaitFilter2019, FUN=mean)
+
+KuwaitFilter2019$Year <- 2019
+  
+KuwaitFilter2019 <- KuwaitFilter2019 %>%
+  filter (date <= as.Date("2020-12-15"))%>% ##change if updated dates
+##Lets add Month_Name and YearName back in.
+  mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+KuwaitFilter2019$YearName <- as.factor(KuwaitFilter2019$YearName)
+
+KuwaitBaseline=full_join(KuwaitFilter2019,KuwaitFilter2020,by=c("ws","RawConc", "visibility", "wd", "relh", "temp", "AQI", "Month", "Day", "Hour", "date", "Year", "YearName", "Month_Name"))
+  
+
+AVGKuwaitFilter20172019 <- timeAverage(KuwaitFilter2019, avg.time = "day")
+AVGKuwaitFilter20172019<- AVGKuwaitFilter20172019%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+  
+ 
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitFilter20172019$YearName <- as.factor(AVGKuwaitFilter20172019$YearName)
+ AVGKuwaitFilter20172019$Month_Name <- fct_reorder(AVGKuwaitFilter20172019$Month_Name, 
+                                          AVGKuwaitFilter20172019$Month, 
+                                          min)
+ AVGKuwaitFilter2020 <- timeAverage(KuwaitFilter2020, avg.time = "day")
+AVGKuwaitFilter2020<- AVGKuwaitFilter2020%>%
+ mutate(
+   Month_Name = case_when(
+      Month == '1' ~ "January",
+      Month == '2' ~ "February",
+      Month == '3' ~ "March",
+      Month == '4' ~ "April",
+      Month == '5' ~ "May",
+      Month == '6' ~ "June",
+      Month == '7' ~ "July",
+      Month == '8' ~ "August",
+      Month == '9' ~ "September",
+      Month == '10' ~ "October",
+      Month == '11' ~ "November",
+      Month == '12' ~ "December" ) )%>%
+  mutate(Month_Name = factor(Month_Name))%>%
+  
+ 
+    mutate(
+    YearName = case_when(
+      Year =='2016' ~ "2016",
+      Year == '2017'~ "2017",
+      Year == '2018'~ "2018",
+      Year == '2019'~ "2019",
+      Year == '2020'~ "2020"))
+AVGKuwaitFilter2020$YearName <- as.factor(AVGKuwaitFilter2020$YearName)
+ AVGKuwaitFilter2020$Month_Name <- fct_reorder(AVGKuwaitFilter2020$Month_Name, 
+                                          AVGKuwaitFilter2020$Month, 
+                                          min)
 
 
 
 ```
 
 
+```{r}
+##Some Plots with filters
+
+ggplot(data = AVGKuwaitFilter200, 
+       mapping = aes(x = Month_Name,
+                     y = RawConc,
+                      fill = YearName)) +  geom_boxplot()+
+  labs(title = "Raw Concentration and Time with PM filter @ 200 UG/M3", x = "Months", y = "Raw Concentration (UG/M3)", fill = "Year" )+ theme_bw()
+
+##Now lets try some line plots
+
+ggplot() + 
+  geom_line(data = KuwaitFilter2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = KuwaitFilter2019, aes(x = date, y = RawConc), color = "red") +
+  
+   labs(title = "Raw Concentration and Time 2017-2019 vs 2020 filter @ 200 UG/M3", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+##now lets try w some avgs
+ggplot() + 
+  geom_line(data = AVGKuwaitFilter2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFilter20172019, aes(x = date, y = RawConc), color = "red") +
+  
+   labs(title = "AVG Raw Concentration and Time 2017-2019 vs 2020 filter @ 200 UG/M3", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
 
 
+ggplot() + 
+  geom_line(data = AVGKuwaitFilter2020, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFilter2020, aes(x = date, y = relh), color = "black") +
+  
+   labs(title = "Avg Raw Concentration and Relative Humidity 2020 with filter @ 200 ug/m3", x = "Months", y = "Raw Concentration (UG/M3)" ) +
+  theme_bw()
+
+ggplot() + 
+  geom_line(data = AVGKuwaitFilter20172019, aes(x = date, y =RawConc), color = "blue") +
+  geom_line(data = AVGKuwaitFilter20172019, aes(x = date, y = relh), color = "black") +
+  
+   labs(title = "Avg Raw Concentration and Relative Humidity 2017-2019 with filter @ 200 ug/m3", x = "Months", y = "Value" ) +
+  theme_bw()
+
+coeff <- 10
+ggplot(AVGKuwaitFilter2020, aes(x=date)) +  geom_line( aes(y=visibility),  color="black") + 
+  geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  scale_y_continuous(
+     # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="Raw Concentration (UG/M3)")
+  ) + theme_bw()+
+labs(title = "Avg Raw Concentration and Visibility for 2020 with filter @ 200 ug/m3 ")
+
+coeff <- 10
+ggplot(KuwaitFilter2020, aes(x=date)) +  geom_line( aes(y=visibility),  color="black") + 
+  geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  scale_y_continuous(
+     # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="Raw Concentration (UG/M3)")
+  ) + theme_bw()+
+labs(title = "Raw Concentration and Visibility for 2020 with filter @ 200 ug/m3 ")
 
 
+coeff <- 10
+ggplot(AVGKuwaitFilter20172019, aes(x=date)) +  geom_line( aes(y=visibility),  color="black") + 
+  geom_line( aes(y=RawConc/ coeff),  color="blue") +
+  scale_y_continuous(
+     # Features of the first axis
+    name = "Visibility",
+    # Add a second axis and specify its features
+   sec.axis = sec_axis(~.*coeff, name="Raw Concentration (UG/M3)")
+  ) + theme_bw()+
+labs(title = "Avg Raw Concentration and Visibility for 2017-2019 with filter @ 200 ug/m3 ")
+
+```
 
 
+```{r ##openair with filters}
+
+KuwaitFilter2020<- KuwaitFilter2020%>%
+filter(ws<= 80)
+
+tm1<-timeVariation(KuwaitFilter2019, pollutant = "ws", main = "PM (UG/M3)from 2017-2019 with filter @200 pm ", cols = "jet")
+tm2<-timeVariation(KuwaitFilter2020, pollutant = "ws", main = "PM Concentrations (UG/M3) in 2020 with filter @200 pm", cols = "jet")
+
+print(tm1, split = c(1, 1, 2, 1))
+print(tm2, split = c(2, 1, 2, 1), newpage = FALSE)
+
+h <- polarPlot(KuwaitFilter2019, pollutant = "RawConc", main = "PM (UG/M3)from 2017-2019 with filter @200 pm",  cols = "jet")
+g <- polarPlot(KuwaitFilter2020,  pollutant = "RawConc", main = "PM Concentrations (UG/M3) in 2020 with filter @200 pm",  cols = "jet")
+
+avg1<-polarPlot(AVGKuwaitFilter20172019, pollutant = "RawConc", main = "AVG PM (UG/M3)from 2017-2019 with filter @200 pm ",  cols = "jet")
+avg2<-  polarPlot(AVGKuwaitFilter2020,  pollutant = "RawConc", main = " AVG PM Concentrations (UG/M3) in 2020 with filter @200 pm ",  cols = "jet")
+print(h, split = c(1, 1, 2, 1))
+print(g, split = c(2, 1, 2, 1), newpage = FALSE)
+
+print(avg1, split = c(1, 1, 2, 1))
+print(avg2, split = c(2, 1, 2, 1), newpage = FALSE)
+
+l <- timeVariation(KuwaitFilter2020, pollutant = "RawConc", main = "PM Concentrations (UG/M3) in 2020 with filter @200 pm ",  cols = "jet")
+print(g, split = c(1, 1, 2, 1))
+print(l, split = c(2, 1, 2, 1), subset = "month", newpage = FALSE)
+
+```
+
+```{r ##more polar plot}
+polarPlot(KuwaitFilter2020, pollutant = "RawConc", main = " PM (UG/M3) from 2020 with filter at 200pm ",  cols = "jet", type = "month")
+
+polarPlot(AVGKuwaitFilter2020, pollutant = "RawConc", main = "AVG PM (UG/M3) from 2020 with filter at 200pm ",  cols = "jet", type = "month")
 
 
+polarPlot(AVGKuwaitFilter20172019, pollutant = "RawConc", main = "AVG PM (UG/M3) from 2017-2019 with filter at 200pm ",  cols = "jet", type = "month")
+
+polarPlot(KuwaitFilter2019, pollutant = "RawConc", main = " PM (UG/M3) from 2017-2019 with filter at 200pm ",  cols = "jet", type = "month")
+
+KuwaitFullJoinWS<- KuwaitFullJoin%>%
+filter(ws <= 80)
+polarPlot(KuwaitFullJoinWS, pollutant = "RawConc", main = " PM (UG/M3) from 2017-2020 ",  cols = "jet", type = "year")
+
+AVGKuwaitFullJoinWS <- timeAverage(KuwaitFullJoinWS, avg.time = "day")
+polarPlot(AVGKuwaitFullJoinWS, pollutant = "RawConc", main = "AVG PM (UG/M3) from 2017-2020 ",  cols = "jet", type = "year")
+
+```
 
 
+```{r}
+polarCluster(AVGKuwaitFullJoinWS,pollutant = "RawConc", n.clusters=2:8  )
 
 
+results8 <- polarCluster(KuwaitFullJoin, pollutant="RawConc", 
+                        n.clusters = 8)
+head(results8)
+head(results8[["data"]])
+results8 <- results8[["data"]]
+
+table(results8[["cluster"]])
+
+
+timeVariation(results8, pollutant = "RawConc", group = "cluster",
+              key.columns = 4, cols = "jet",
+             ci = FALSE, lwd = 3)
+
+##From the clustering, we can see that cluster 7 has the most variation so lets pull that out and see what happens
+
+
+##lets first try less clusters, I am currious
+
+results4 <- polarCluster(OAFullJoin, pollutant="RawConc", 
+                        n.clusters = 4)
+
+
+head(results4)
+head(results4[["data"]])
+results4 <- results4[["data"]]
+
+table(results4[["cluster"]])
+
+
+timeVariation(results4, pollutant = "RawConc", group = "cluster",
+              key.columns = 4, cols = "jet",
+             ci = FALSE, lwd = 3)
+
+##OKay lets pull out 3 from results 4 and 7 from results 8
+timeVariation(filter(results4, cluster %in% c("1", "3")),
+              pollutant = "RawConc",
+              group = "cluster",  
+               cols = "jet", lwd = 3)
+
+timeVariation(filter(results8, cluster %in% c("3", "7")),
+              pollutant = "RawConc",
+              group = "cluster",  
+     cols = "jet", lwd = 3)
+
+##lets stick with 4 clusters and plot just a time series with the clusters
+ggplot(data = results4, 
+       mapping = aes(x = date,
+                     y = RawConc,
+                      fill = cluster,
+                     color = cluster)) +  geom_line()+
+  labs(title = "Clusters generated with open air plotted in a time series to observe the differences in pm", fill = "Year" )+ theme_bw()
+
+##This plot was tooo busy so lets do avgs?
+OAFullJoin <- KuwaitFullJoin  %>%
+select(date, ws, wd, RawConc, temp, relh, visibility, AQI) 
+
+AvgOAFullJoin <- timeAverage(OAFullJoin, avg.time = "day")
+AVGresults4 <- polarCluster(AvgOAFullJoin, pollutant="RawConc", 
+                        n.clusters = 4)
+
+
+head(AVGresults4)
+head(AVGresults4[["data"]])
+AVGresults4 <- AVGresults4[["data"]]
+
+table(AVGresults4[["cluster"]])
+
+ggplot(data = AVGresults4, 
+       mapping = aes(x = date,
+                     y = RawConc,
+                      fill = cluster,
+                     color = cluster)) +  geom_line()+
+  labs(title = "AVG Clusters generated with open air plotted in a time series to observe the differences in pm", fill = "Year" )+ theme_bw()
+
+
+##Just testing out some open air plots
+
+timeProp(selectByDate(OAFullJoin ),
+         pollutant = "RawConc", avg.time = "3 day",
+         proportion = "wd", date.breaks = 10, key.position = "top",
+         key.columns = 8, ylab = "PM 2.5 (UG/M3)")
+##CPF analysis is very useful for showing which wind directions are dominated by high concentrations and give the probability of doing so.
+timeProp(selectByDate(OAFullJoin, year = 2020),
+         pollutant = "ws",
+         avg.time = "3 day",
+         n.levels = 5,
+         cols = "viridis",
+         proportion = "RawConc", date.breaks = 10,
+         key.position = "top", key.columns = 3)
+
+```
+
+
+```{r}
+OAFullJoin2 <- mutate(OAFullJoin, 
+                 feature = ifelse(RawConc > 200 & visibility < 2, "Other", "Dust"))
+
+timeVariation(OAFullJoin2, pollutant = "RawConc", 
+              group = "feature", 
+              difference = TRUE)
+
+
+```
