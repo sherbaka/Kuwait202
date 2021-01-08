@@ -7,7 +7,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r packages}
 ##All the packages essential to running my code, there might even be some that I never use, but most of them are needed and they are here:
 library(plyr)
 library(tidyverse)
@@ -24,17 +24,19 @@ library(gridExtra)
 
 
 
-```{r}
+```{r datasets}
 ##May not use all these datasets, but lets import them either way. 
 setwd("~/Desktop/4Years@Reed_2/Summer Research/Kuwait202")
-KuwaitFullJoin <- read_csv("Data/KuwaitFullJoin.csv")
-KuwaitWeather <- read_csv("Data/KuwaitWeather.csv")
-KuwaitPMFull <- read_csv("Data/KuwaitPMFull.csv")
+KuwaitFullJoin <- read_csv("Rcode/KuwaitFullJoin.csv")
+KuwaitWeather <- read_csv("Rcode/KuwaitWeather.csv")
+KuwaitPMFull <- read_csv("Rcode/KuwaitPMFull.csv")
 ```
 
 
 
-```{r}
+```{r sample plots}
+OAFullJoin <- KuwaitFullJoin  %>%
+select(date, ws, wd, RawConc, tempc, relh, visibility, AQI) 
 
 ###Lets mutate it becaseu i dont know how else to make a nice looking faceted plot.
 KuwaitFullJoinFacet<- KuwaitFullJoin%>%
@@ -97,9 +99,11 @@ ggplot(data = KuwaitFullJoinFacet,
 
 
 
-```{r}
+```{r daily means}
 ###Taking the daily means
+KuwaitFullJoin$Year <- as.numeric(KuwaitFullJoin$Year)
 AVGKuwaitBaseline <- timeAverage(KuwaitFullJoin, avg.time = "day")
+
 AVGKuwaitBaseline<- AVGKuwaitBaseline%>%
  mutate(
    Month_Name = case_when(
@@ -696,8 +700,6 @@ ggplot(data = results4,
   labs(title = "Clusters generated with open air plotted in a time series to observe the differences in pm", fill = "Year" )+ theme_bw()
 
 ##This plot was tooo busy so lets do avgs?
-OAFullJoin <- KuwaitFullJoin  %>%
-select(date, ws, wd, RawConc, temp, relh, visibility, AQI) 
 
 AvgOAFullJoin <- timeAverage(OAFullJoin, avg.time = "day")
 AVGresults4 <- polarCluster(AvgOAFullJoin, pollutant="RawConc", 
@@ -746,3 +748,103 @@ timeVariation(OAFullJoin2, pollutant = "RawConc",
 
 
 ```
+
+
+```{r for the paper}
+
+##Playing around with these plots
+calendarPlot(OAFullJoin, pollutant = "RawConc",year = 2017,
+  breaks = c(0, 50, 100, 150, 1000),
+  labels = c("Very low(0-49)", "Low(50-99)", "High(100-149)", "Very High(150-1000"),
+  cols = "increment", statistic = "max")
+
+calendarPlot(OAFullJoin, pollutant = "RawConc",year = 2018,
+  breaks = c(0, 50, 100, 150, 1000),
+  labels = c("Very low(0-49)", "Low(50-99)", "High(100-149)", "Very High(150-1000"),
+  cols = "increment", statistic = "max")
+
+##Used for paper
+timePlot(selectByDate(OAFullJoin, year= 2020), pollutant = "RawConc", 
+         avg.time = "day", xlab = "Month", ylab= "Raw Concentration (UG/M3)",main = "Time Series of Daily Averages for 2020")
+
+timePlot(selectByDate(OAFullJoin),
+         pollutant = c("RawConc"),
+         y.relation = "free")
+
+ polarCluster(AvgOAFullJoin, pollutant="RawConc", 
+                        n.clusters = 4, main = "Polar Plot of Daily Average PM with Wind Speed and Direction Clustered")
+ 
+ timePlot(OAFullJoin, 
+         pollutant = c("RawConc", "visibility"),
+         avg.time = "month", cols = "jet",
+       y.relation = "free", main = "Time Series for Visibility and Raw Concentration with Monthly Averages")
+ 
+ timeVariation(KuwaitFullJoin, pollutant = "RawConc", group = "Year", CI=  FALSE   )
+
+ KuwaitFullJoin$Year <- as.factor(KuwaitFullJoin$Year)
+ KuwaitFullJoin<- KuwaitFullJoin%>%
+   filter(Year!= 2021)
+timeVariation(KuwaitFullJoin, pollutant = "RawConc", group = "Year",
+              key.columns = 4,
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values from 2017-2020 ", ylab = "(UG/M3)", xlab = "Year" )
+
+
+results4 <- polarCluster(AVGKuwaitBaseline, pollutant="RawConc", 
+                        n.clusters = 4)
+
+
+head(results4)
+head(results4[["data"]])
+results4 <- results4[["data"]]
+
+table(results4[["cluster"]])
+
+results5 <- polarCluster(KuwaitFullJoin, pollutant="RawConc", 
+                        n.clusters = 5, main = "Polar Plot of Hourly PM (2017-2020) with Wind Speed and Direction Clustered")
+
+
+results5 <- results5[["data"]]
+
+
+results5 <- results5%>%
+    filter(cluster!= 5)
+timeVariation(results5, pollutant = "RawConc", group = "cluster",
+              key.columns = 4,
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-4", xlab= "Cluster", ylab = "(UG/M3)")
+
+
+results6 <- results5%>%
+    filter(cluster!= 4)
+
+timeVariation(results6, pollutant = "RawConc", group = "cluster",
+              key.columns = 3,
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-3", xlab= "Cluster", ylab = "(UG/M3)")
+polarPlot(results5,  pollutant = "RawConc",main = "Polar Plot with Clusters 1-4", xlab= "", ylab = "", type = "cluster", k = 1)
+polarPlot(results6,  pollutant = "RawConc",main = "Polar Plot with Clusters 1-3 by Year", xlab= "", ylab = "", type = "year", k = 1)
+
+ timePlot(results6, 
+         pollutant = c("RawConc", "visibility"),
+         avg.time = "month", cols = "jet",
+       y.relation = "free", main = "Time Series for Visibility and Raw Concentration with Monthly Averages with Cluster 4 and 5 Filtered Out")
+  timePlot(OAFullJoin, 
+         pollutant = c("RawConc", "relh"),
+          cols = "jet",
+       y.relation = "free", main = "Time Series for Relative Humidity and Raw Concentration with Daily Averages", fontsize = 10)
+   timePlot(selectByDate(results5, year = 2020),
+         pollutant = c("RawConc")
+    ,col= "jet",
+     main = "Time Series for Raw Concentration with Raw Data from 2020", fontsize = 10, xlab= "Date")
+   timePlot(selectByDate(results5, year = 2017:2019),
+         pollutant = c("RawConc"),
+         avg.time = "day" ,
+     main = "Time Series for Raw Concentration with Daily Averages from 2017-2019", fontsize = 10, xlab= "Date")
+
+```
+
+
+
+
+
+
+
+
