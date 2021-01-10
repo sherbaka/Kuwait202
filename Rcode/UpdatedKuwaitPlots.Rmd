@@ -825,19 +825,47 @@ polarPlot(results6,  pollutant = "RawConc",main = "Polar Plot with Clusters 1-3 
  timePlot(results6, 
          pollutant = c("RawConc", "visibility"),
          avg.time = "month", cols = "jet",
-       y.relation = "free", main = "Time Series for Visibility and Raw Concentration with Monthly Averages with Cluster 4 and 5 Filtered Out")
+       y.relation = "free", main = "Time Series for Visibility and Raw Concentration with Monthly Averages with Cluster 4 and 5 Filtered Out", ylab = c("PM2.5 (ug/m3)", "visibility"))
+ 
+timePlot (OAFullJoin, pollutant = c("RawConc", "relh"), cols= "jet", y.relation = "free", avg.time = "day")
+
   timePlot(OAFullJoin, 
          pollutant = c("RawConc", "relh"),
           cols = "jet",
-       y.relation = "free", main = "Time Series for Relative Humidity and Raw Concentration with Daily Averages", fontsize = 10)
+       y.relation = "free", avg.time = "day", 
+       main = "Time Series for Relative Humidity and Raw Concentration with Daily Averages", (fontsize = 10))
    timePlot(selectByDate(results5, year = 2020),
          pollutant = c("RawConc")
     ,col= "jet",
-     main = "Time Series for Raw Concentration with Raw Data from 2020", fontsize = 10, xlab= "Date")
+     main = "Time Series for Raw Concentration with Raw Data from 2020", fontsize = 10, xlab= "Date", ylab = "PM2.5 (ug/m3)")
+   
+    timePlot(selectByDate(results5, year = 2020),
+         pollutant = c("RawConc")
+    ,col= "jet", avg.time="day", cols = "red")
    timePlot(selectByDate(results5, year = 2017:2019),
          pollutant = c("RawConc"),
          avg.time = "day" ,
      main = "Time Series for Raw Concentration with Daily Averages from 2017-2019", fontsize = 10, xlab= "Date")
+
+```
+
+```{r}
+
+polarCluster(KuwaitFullJoin, pollutant="RawConc", 
+                        n.clusters = 5, main = "Polar Plot of Hourly PM (2017-2020) with Wind Speed and Direction Clustered", cols= c("#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854"))
+
+timeVariation(results6, pollutant = "RawConc", group = "cluster",
+              key.columns = 3,
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-3", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#66c2a5","#fc8d62","#8da0cb"))
+
+timeVariation(results5, pollutant = "RawConc", group = "cluster",
+              key.columns = 4,
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-4", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#66c2a5","#fc8d62","#8da0cb","#e78ac3"))
+
+
+ timePlot(filter(KuwaitFullJoin, Year == 2020, visibility >= 4, RawConc <= 200),
+         pollutant = c("RawConc")
+    ,col= "jet", avg.time="day", cols = "red", main = "Daily Averaged Filtered Time Series in 2020")
 
 ```
 
