@@ -821,6 +821,7 @@ timeVariation(results6, pollutant = "RawConc", group = "cluster",
              ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-3", xlab= "Cluster", ylab = "(UG/M3)")
 polarPlot(results5,  pollutant = "RawConc",main = "Polar Plot with Clusters 1-4", xlab= "", ylab = "", type = "cluster", k = 1)
 polarPlot(results6,  pollutant = "RawConc",main = "Polar Plot with Clusters 1-3 by Year", xlab= "", ylab = "", type = "year", k = 1)
+polarPlot(OAFullJoin,  pollutant = "RawConc",main = "Polar Plot by Year", xlab= "", ylab = "", type = "year", k = 1)
 
  timePlot(results6, 
          pollutant = c("RawConc", "visibility"),
@@ -852,25 +853,46 @@ timePlot (OAFullJoin, pollutant = c("RawConc", "relh"), cols= "jet", y.relation 
 ```{r}
 
 polarCluster(KuwaitFullJoin, pollutant="RawConc", 
-                        n.clusters = 5, main = "Polar Plot of Hourly PM (2017-2020) with Wind Speed and Direction Clustered", cols= c("#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854"))
+                        n.clusters = 5, main = "Polar Plot of Hourly PM (2017-2020) with Wind Speed and Direction Clustered", cols= c("#7fc97f","#beaed4","#fdc086","#ffff99","#386cb0"))
 
 timeVariation(results6, pollutant = "RawConc", group = "cluster",
               key.columns = 3,
-             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-3", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#66c2a5","#fc8d62","#8da0cb"))
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-3", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#7fc97f","#beaed4","#fdc086"))
 
 timeVariation(results5, pollutant = "RawConc", group = "cluster",
               key.columns = 4,
-             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-4", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#66c2a5","#fc8d62","#8da0cb","#e78ac3"))
+             ci = FALSE, main = "Diuranal Cylces for Unfiltered PM values With Clusters 1-4", xlab= "Cluster", ylab = "(UG/M3)", cols= c("#7fc97f","#beaed4","#fdc086","#ffff99"))
 
 
- timePlot(filter(KuwaitFullJoin, Year == 2020, visibility >= 4, RawConc <= 200),
+ time <-timePlot(filter(KuwaitFullJoin, Year == 2020, visibility >= 4, RawConc <= 200),
          pollutant = c("RawConc")
     ,col= "jet", avg.time="day", cols = "red", main = "Daily Averaged Filtered Time Series in 2020")
 
+ time <- time[["data"]]
 ```
 
 
+```{r}
+custom <- c("#7fc97f","#beaed4","#fdc086","#ffff99","#386cb0")
+results5<-results5%>%
+  filter(!is.na(cluster))
 
+ggplot() + 
+  geom_boxplot(data = results5, aes(x = cluster, y =RawConc, fill = cluster)) +
+   labs(title = "Time Series of Clusters 1-5", x = "Months", y = "Value" ) +
+  scale_fill_manual(values=custom) +theme_bw()
+results5<- results5%>%
+filter (Year != 2021)
+
+ggplot() + 
+  geom_line(data = results5, aes(x = date, y =RawConc, color =cluster, group = 1)) +
+   labs(title = "Time Series of Clusters 1-5", x = "Time", y = "PM2.5 (ug/m3)" ) +
+  scale_color_manual(values=custom) +theme_minimal() +facet_wrap(~cluster)
+
+ results5 %>% 
+      group_by(cluster) %>% 
+      tally()
+```
 
 
 
