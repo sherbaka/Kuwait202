@@ -878,14 +878,14 @@ results5<-results5%>%
   filter(!is.na(cluster))
 
 ggplot() + 
-  geom_boxplot(data = results5, aes(x = cluster, y =RawConc, fill = cluster)) +
+  geom_dotplot(data = results5, aes(x = cluster, y =RawConc, fill = cluster, dotsize = .0004)) +
    labs(title = "Time Series of Clusters 1-5", x = "Months", y = "Value" ) +
   scale_fill_manual(values=custom) +theme_bw()
 results5<- results5%>%
 filter (Year != 2021)
 
-ggplot() + 
-  geom_line(data = results5, aes(x = date, y =RawConc, color =cluster, group = 1)) +
+ggplot(data = results5, aes(x = date, y =RawConc, color=cluster, group = 1)) +
+  geom_point(size = 0.5) +
    labs(title = "Time Series of Clusters 1-5", x = "Time", y = "PM2.5 (ug/m3)" ) +
   scale_color_manual(values=custom) +theme_minimal() +facet_wrap(~cluster)
 
